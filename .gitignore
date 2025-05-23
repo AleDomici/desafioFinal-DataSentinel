@@ -1,0 +1,7 @@
+# .gitignore para projetos Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
