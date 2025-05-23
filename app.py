@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from email_validator import validate_email, EmailNotValidError
 import tempfile
-from lambda_functions.processor.dynamodb_handler import DynamoDBHandler  # AJUSTADO
+from lambda_functions.processor.dynamodb_handler import DynamoDBHandler  
 from lambda_functions.processor.s3_handler import S3Handler
 from lambda_functions.processor.utils.logger import setup_logger
 from dotenv import load_dotenv
@@ -20,7 +20,7 @@ S3_BUCKET = os.environ.get('S3_BUCKET')
 logger = setup_logger(__name__)
 
 # Inicialização de Handlers
-dynamodb_handler = DynamoDBHandler(DYNAMODB_TABLE)  # AJUSTADO
+dynamodb_handler = DynamoDBHandler(DYNAMODB_TABLE) 
 s3_handler = S3Handler(S3_BUCKET)
 
 @app.post("/upload/")
