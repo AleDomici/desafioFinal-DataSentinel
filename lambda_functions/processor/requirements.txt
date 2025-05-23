@@ -1,0 +1,17 @@
+# Data Sentinel - Requisitos de Dependências
+
+## Lambda Function: Processor
+
+```
+boto3==1.26.0
+stackspot-sdk==1.0.0
+pandas==1.5.3
+python-dotenv==1.0.0
+```
+
+## Lambda Function: Notifier
+
+```
+boto3==1.26.0
+python-dotenv==1.0.0
+```
