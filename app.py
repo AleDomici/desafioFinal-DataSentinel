@@ -56,13 +56,14 @@ async def upload_file(file: UploadFile = File(...), email: str = Form(...)):
 
     # Armazenar no DynamoDB com o e-mail
     audit_data = {
-        'audit_id': str(uuid.uuid4()),  # Geração de ID único
-        'requester_email': email,
-        'file_name': file.filename,
-        's3_path': s3_key,
-        'status': 'PENDING',  # Status inicial
-        'created_at': datetime.utcnow().isoformat(),  # Timestamp atual
-    }
+    'audit_id': str(uuid.uuid4()),
+    'timestamp': datetime.utcnow().isoformat(),
+    'requester_email': email,
+    'file_name': file.filename,
+    's3_path': s3_key,
+    'status': 'PENDING',
+    'created_at': datetime.utcnow().isoformat(),
+}
     try:
         dynamodb_handler.save_audit_result(audit_data)  
     except Exception as e:
