@@ -1,2 +1,5 @@
 boto3==1.26.0
+stackspot-sdk==1.0.0
+pandas==1.5.3
 python-dotenv==1.0.0
+mangum==0.19.0
