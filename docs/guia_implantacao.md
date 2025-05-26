@@ -21,28 +21,34 @@ Este documento fornece instruções detalhadas para a implantação do Data Sent
 
 ```
 data_sentinel/
+├── .gitignore                  # Arquivo de configuração do Git para ignorar arquivos
+├── app.py                      # Aplicação FastAPI para endpoints REST
+├── README.md                   # Documentação principal do projeto
 ├── docs/
 │   ├── arquitetura.md
-│   └── estrutura_codigo.md
+│   ├── estrutura_codigo.md     # Este arquivo
+│   ├── guia_implantacao.md
+│   └── FLUXOGRAMADESAFIOFINALSQUAD2.drawio.png # Imagem do diagrama
 ├── lambda_functions/
-│   ├── processor/
+│   ├── processor/              # Código da Lambda de processamento
 │   │   ├── main.py
-│   │   ├── stackspot_integration.py
+│   │   ├── requirements.txt
 │   │   ├── data_analyzer.py
-│   │   ├── s3_handler.py
 │   │   ├── dynamodb_handler.py
-│   │   ├── sns_publisher.py
+│   │   ├── s3_handler.py
 │   │   └── utils/
 │   │       ├── logger.py
 │   │       └── validators.py
-│   └── notifier/
+│   └── notifier/               # Código da Lambda de notificação
 │       ├── main.py
-│       ├── email_formatter.py
+│       ├── requirements.txt
 │       ├── dynamodb_reader.py
+│       ├── email_formatter.py
 │       └── utils/
 │           └── logger.py
-└── templates/
-    └── cloudformation.yaml
+└── tests/                      # Testes unitários e de integração (estrutura exemplo)
+    ├── processor/
+    └── notifier/
 ```
 
 ## Passos para Implantação
