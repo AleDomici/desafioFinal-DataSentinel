@@ -2,43 +2,42 @@ name: Deploy to EC2 Windows via SSH
 
 on:
   push:
-    branches: [ "main" ] # Aciona o workflow em push para a branch main
+    branches: [ "main" ]
 
 jobs:
   deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-       # Opcional: Configurar credenciais AWS (se precisar interagir com AWS API, ex: ECR)
+      # Opcional: Configurar credenciais AWS (se necessário)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # Substitua pela sua região AWS
+          aws-region: us-east-1
 
       - name: Deploy to EC2 Windows via SSH
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.EC2_HOST }} # Segredo: IP público ou DNS da instância EC2
-          username: ${{ secrets.EC2_USER }} # Segredo: Usuário para login SSH (ex: Administrator)
-          key: ${{ secrets.EC2_SSH_KEY }} # Segredo: Chave SSH privada
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }} # Ex: Administrator
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             echo "Logging into Docker Hub..."
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
-            
+
             echo "Pulling latest Docker image..."
-            docker pull ${{ secrets.DOCKER_IMAGE_NAME }}:latest # Segredo: Nome da imagem (ex: seu-user/seu-app)
-            
+            docker pull ${{ secrets.DOCKER_IMAGE_NAME }}:latest
+
             echo "Stopping and removing existing container (if any)..."
-            docker stop desafio-final-container || true # Use um nome de container consistente
-            docker rm desafio-final-container || true
-            
+            docker stop desafio-final-container || exit 0
+            docker rm desafio-final-container || exit 0
+
             echo "Starting new container..."
             docker run -d --name desafio-final-container -p 8000:8000 ${{ secrets.DOCKER_IMAGE_NAME }}:latest
-            
-            echo "Deployment finished!"
 
+            echo "Deployment finished!"
