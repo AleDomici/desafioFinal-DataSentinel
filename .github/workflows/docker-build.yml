@@ -35,14 +35,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to EC2 Windows via WinRM
-        uses: appleboy/winrm-action@v2
+        uses: appleboy/winrm-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: Administrator
           password: ${{ secrets.EC2_PASSWORD }}
-          script: |
-            # Comandos PowerShell para deploy
+          script:
             docker pull seu-usuario/seu-app:${{ github.sha }}
-            docker stop seu-app
-            docker rm seu-app
+            docker stop seu-app || exit 0
+            docker rm seu-app || exit 0
             docker run -d --name seu-app -p 80:80 seu-usuario/seu-app:${{ github.sha }}
