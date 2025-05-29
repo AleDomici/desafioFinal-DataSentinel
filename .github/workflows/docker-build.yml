@@ -30,7 +30,7 @@ jobs:
           context: . # Usa o diretório atual como contexto de build
           file: ./Dockerfile # Especifica o caminho para o Dockerfile
           push: false # Mude para true para enviar a imagem para um registro após o build
-          tags: seu-usuario/seu-app:${{ github.sha }} # Marque a imagem (substitua seu-usuario/seu-app pelo nome desejado)
+          tags: AleDomici/desafioFinal-DataSentinel:${{ github.sha }} # Marque a imagem (substitua seu-usuario/seu-app pelo nome desejado)
           # Exemplo para push:
           # push: ${{ github.event_name != 'pull_request' }} # Envia apenas no merge para main, não em PRs
           # tags: seu-dockerhub-username/seu-repo-name:latest, seu-dockerhub-username/seu-repo-name:${{ github.sha }}
