@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-push:
-    runs-on: windows-2022  # <--- Use runner Windows!
+    runs-on: windows-2022
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,7 +20,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image (Windows)
-        run:  
+        shell: bash
+        run: |
           docker build -t aledomici/desafiofinal-datasentinel:${{ github.sha }} .
           docker tag aledomici/desafiofinal-datasentinel:${{ github.sha }} aledomici/desafiofinal-datasentinel:latest
           docker push aledomici/desafiofinal-datasentinel:${{ github.sha }}
@@ -36,7 +37,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: Administrator
           password: ${{ secrets.EC2_PASSWORD }}
-          script:  
+          script: |
             docker pull aledomici/desafiofinal-datasentinel:${{ github.sha }}
             docker stop desafiofinal-datasentinel || exit 0
             docker rm desafiofinal-datasentinel || exit 0
