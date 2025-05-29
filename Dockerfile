@@ -1,25 +1,26 @@
-FROM mcr.microsoft.com/windows/servercore:ltsc2022
+# Use an official Python runtime as a parent image
+FROM python:3.11-slim
 
-# Instale Python manualmente
-RUN powershell -Command `
-    Invoke-WebRequest -Uri https://www.python.org/ftp/python/3.11.5/python-3.11.5-amd64.exe -OutFile python-installer.exe ; `
-    Start-Process python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait ; `
-    Remove-Item python-installer.exe
-
-ENV PATH="C:\\Program Files\\Python311;C:\\Program Files\\Python311\\Scripts;%PATH%"
-
+# Set the working directory in the container
 WORKDIR /app
 
-# Copie requirements.txt para a raiz do projeto
+# Copy the requirements file into the container at /app
 COPY requirements.txt .
 
-# Instale dependências (inclua uvicorn no requirements.txt)
+# Install any needed packages specified in requirements.txt
+# Using --no-cache-dir reduces image size
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copie o restante do código
+# Copy the rest of the application code into the container at /app
+# This includes app.py and any other necessary files/directories
 COPY . .
 
+# Expose port 8000 to allow communication to the application
+# FastAPI/Uvicorn default port is 8000
 EXPOSE 8000
 
-# Use uvicorn para rodar FastAPI
+# Run app.py when the container launches using uvicorn
+# 'app:app' refers to the 'app' instance created in the 'app.py' file
+# '--host 0.0.0.0' makes the server accessible from outside the container
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+
