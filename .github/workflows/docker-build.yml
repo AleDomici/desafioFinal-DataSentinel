@@ -34,14 +34,14 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to EC2 via SSH
-        uses: appleboy/winrm-action@main
+      - name: Deploy to Windows via WinRM
+        uses: appleboy/winrm-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          username: Administrator
+          password: ${{ secrets.EC2_PASSWORD }}
           script: 
             docker pull aledomici/desafiofinal-datasentinel:${{ github.sha }}
-            docker stop seu-app || true
-            docker rm seu-app || true
-            docker run -d --name seu-app -p 80:80 aledomici/desafiofinal-datasentinel:${{ github.sha }}
+            docker stop desafiofinal-datasentinel || exit 0
+            docker rm desafiofinal-datasentinel || exit 0
+            docker run -d --name desafiofinal-datasentinel -p 80:80 aledomici/desafiofinal-datasentinel:${{ github.sha }}
