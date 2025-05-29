@@ -1,34 +1,48 @@
-name: Build Docker Image
+name: Build, Push and Deploy Docker Image
 
 on:
   push:
-    branches: [ "main" ] # Aciona o workflow em eventos de push para a branch main
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ] # Também aciona em pull requests para a main
+    branches: [ "main" ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest # Usa o runner Ubuntu mais recente
-
+  build-and-push:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # Faz o checkout do código do repositório
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3 # Configura o Docker Buildx para melhores capacidades de build
+        uses: docker/setup-buildx-action@v3
 
-      # Opcional: Login em um registro Docker (ex: Docker Hub)
-      # - name: Log in to Docker Hub
-      #   uses: docker/login-action@v3
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }} # Necessário criar Secret no GitHub
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}  # Necessário criar Secret no GitHub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: . # Usa o diretório atual como contexto de build
-          file: ./Dockerfile # Especifica o caminho para o Dockerfile
-          push: false # Mude para true para enviar a imagem para um registro após o build
-          tags: aledomici/desafiofinal-datasentinel:${{ github.sha }} # Ensure repository name is lowercase
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: aledomici/desafiofinal-datasentinel:latest, aledomici/desafiofinal-datasentinel:${{ github.sha }}
 
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2 Windows via WinRM
+        uses: appleboy/winrm-action@v2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: Administrator
+          password: ${{ secrets.EC2_PASSWORD }}
+          script: |
+            # Comandos PowerShell para deploy
+            docker pull seu-usuario/seu-app:${{ github.sha }}
+            docker stop seu-app
+            docker rm seu-app
+            docker run -d --name seu-app -p 80:80 seu-usuario/seu-app:${{ github.sha }}
