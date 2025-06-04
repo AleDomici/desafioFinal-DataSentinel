@@ -15,6 +15,7 @@ import csv
 import io
 
 load_dotenv()
+
 app = FastAPI()
 
 # Configurações
@@ -98,14 +99,14 @@ async def upload_arquivo(file: UploadFile = File(...), email: str = Form(...)):
         'text': file_content.decode()  # Salva o CSV puro como string
     }
     try:
-        dynamodb_handler.save_audit_result(audit_data)
+        dados_auditoria_handler.save_audit_result(audit_data)
     except Exception as e:
         logger.error(f"Erro ao salvar resultado da auditoria: {str(e)}")
         raise HTTPException(status_code=500, detail="Erro ao salvar resultado da auditoria.")
     return {"filename": file.filename, "message": "Arquivo enviado com sucesso!", "email": email}
 
-@app.get("/dados-sensiveis")
-def get_dados_sensiveis(email: str = Query(..., description="E-mail do solicitante para filtrar auditorias")):
+@app.get("/sensitive-data/")
+def get_sensitive_data(email: str = Query(..., description="E-mail do solicitante para filtrar auditorias")):
     try:
         audits = dados_auditoria_handler.list_audits_by_requester(email)
         audits = [a for a in audits if a.get("requester_email") == email]

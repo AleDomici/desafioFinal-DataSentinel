@@ -1,365 +1,128 @@
-# Estrutura de Código para as Funções Lambda
+# Estrutura de Código do Data Sentinel
 
 ## Visão Geral
 
-Este documento descreve a estrutura de código para as duas funções Lambda que compõem o Data Sentinel:
-1. `data_sentinel_processor`: Responsável pelo processamento e análise de dados sensíveis
-2. `data_sentinel_notifier`: Responsável pelo envio de notificações aos solicitantes
+Este documento descreve a estrutura de código do projeto Data Sentinel, detalhando tanto as funções Lambda quanto a aplicação FastAPI (`app.py`) que serve como interface para interação.
 
-## Estrutura de Diretórios
+## Estrutura de Diretórios Principal
 
 ```
 data_sentinel/
+├── .gitignore                  # Arquivo de configuração do Git para ignorar arquivos
+├── app.py                      # Aplicação FastAPI para endpoints REST
+├── README.md                   # Documentação principal do projeto
+├── docs/
+│   ├── arquitetura.md
+│   ├── estrutura_codigo.md     # Este arquivo
+│   ├── guia_implantacao.md
+│   └── FLUXOGRAMADESAFIOFINALSQUAD2.drawio.png # Imagem do diagrama
 ├── lambda_functions/
-│   ├── processor/
-│   │   ├── main.py                 # Ponto de entrada da função Lambda
-│   │   ├── requirements.txt        # Dependências
-│   │   ├── stackspot_integration.py # Integração com StackSpot IA
-│   │   ├── data_analyzer.py        # Análise de dados sensíveis
-│   │   ├── s3_handler.py           # Manipulação de arquivos no S3
-│   │   ├── dynamodb_handler.py     # Operações no DynamoDB
-│   │   ├── sns_publisher.py        # Publicação de mensagens no SNS
+│   ├── processor/              # Código da Lambda de processamento
+│   │   ├── main.py
+│   │   ├── requirements.txt
+│   │   ├── data_analyzer.py
+│   │   ├── dynamodb_handler.py
+│   │   ├── s3_handler.py
 │   │   └── utils/
-│   │       ├── __init__.py
-│   │       ├── logger.py           # Configuração de logs
-│   │       └── validators.py       # Validadores de entrada
-│   │
-│   └── notifier/
-│       ├── main.py                 # Ponto de entrada da função Lambda
-│       ├── requirements.txt        # Dependências
-│       ├── email_formatter.py      # Formatação de e-mails
-│       ├── dynamodb_reader.py      # Leitura de dados do DynamoDB
+│   │       ├── logger.py
+│   │       └── validators.py
+│   └── notifier/               # Código da Lambda de notificação
+│       ├── main.py
+│       ├── requirements.txt
+│       ├── dynamodb_reader.py
+│       ├── email_formatter.py
 │       └── utils/
-│           ├── __init__.py
-│           └── logger.py           # Configuração de logs
-│
-└── tests/
+│           └── logger.py
+└── tests/                      # Testes unitários e de integração (estrutura exemplo)
     ├── processor/
-    │   ├── test_main.py
-    │   ├── test_stackspot_integration.py
-    │   ├── test_data_analyzer.py
-    │   ├── test_s3_handler.py
-    │   └── test_dynamodb_handler.py
-    │
     └── notifier/
-        ├── test_main.py
-        ├── test_email_formatter.py
-        └── test_dynamodb_reader.py
 ```
 
-## Detalhamento dos Módulos
+*(Nota: Os módulos `stackspot_integration.py` e `sns_publisher.py` mencionados anteriormente na documentação não estão presentes na estrutura atual do diretório `processor`.)*
 
-### Lambda Function: Processor
+## Aplicação FastAPI (`app.py`)
 
-#### main.py
-```python
-def lambda_handler(event, context):
-    """
-    Função principal que processa o evento de upload de arquivo CSV.
-    
-    Args:
-        event: Evento que acionou a função Lambda
-        context: Contexto de execução da Lambda
-        
-    Returns:
-        dict: Resposta da função Lambda
-    """
+A aplicação `app.py` utiliza o framework FastAPI para expor endpoints REST que permitem a interação com o sistema Data Sentinel. Ela é responsável por receber uploads de arquivos, consultar auditorias e, potencialmente, gerenciar dados.
 
-    pass
-```
+### Principais Funcionalidades:
 
-#### stackspot_integration.py
-```python
-class StackSpotIntegration:
-    """
-    Classe responsável pela integração com StackSpot IA usando Quick Commands.
-    """
-    
-    def __init__(self, config):
-        """Inicializa a integração com StackSpot."""
-        pass
-        
-    def analyze_sensitive_data(self, file_path):
-        """
-        Analisa dados sensíveis em um arquivo CSV usando StackSpot IA.
-        
-        Args:
-            file_path: Caminho do arquivo a ser analisado
-            
-        Returns:
-            dict: Resultados da análise
-        """
-        pass
-```
+*   **Upload de Arquivos (`POST /arquivos`):**
+    *   Recebe um arquivo CSV e um e-mail do solicitante via formulário.
+    *   Valida se o arquivo é CSV e se o tamanho não excede 5MB.
+    *   Valida o formato do e-mail utilizando a biblioteca `email-validator`.
+    *   Salva o arquivo temporariamente.
+    *   Realiza o upload do arquivo para o bucket S3 configurado usando `S3Handler`.
+    *   Registra os metadados da auditoria (incluindo `audit_id`, `timestamp`, `requester_email`, `file_name`, `s3_path`, `status='PENDING'`) no DynamoDB usando `DynamoDBHandler`.
+    *   Retorna uma mensagem de sucesso.
+*   **Consulta de Auditorias (`GET /dados-sensiveis`):**
+    *   Recebe um e-mail como parâmetro de query.
+    *   Utiliza `DynamoDBHandler` para buscar todas as auditorias associadas ao e-mail fornecido.
+    *   Retorna a lista de auditorias encontradas.
+*   **Deleção de Auditorias (`DELETE /dados-sensiveis`):**
+    *   *(Implementação atual parece ser para teste/limpeza, buscando por um e-mail fixo "example@domain.com")*
+    *   Busca auditorias associadas ao e-mail fixo.
+    *   Utiliza `DynamoDBHandler` para deletar cada auditoria encontrada.
+    *   Retorna uma mensagem de sucesso.
 
-#### data_analyzer.py
-```python
-class DataAnalyzer:
-    """
-    Classe responsável pela análise de dados sensíveis.
-    """
-    
-    def __init__(self, stackspot_client):
-        """Inicializa o analisador de dados."""
-        self.stackspot_client = stackspot_client
-        
-    def analyze_csv(self, file_path):
-        """
-        Analisa um arquivo CSV em busca de dados sensíveis.
-        
-        Args:
-            file_path: Caminho do arquivo CSV
-            
-        Returns:
-            dict: Resultados da análise
-        """
-        pass
-        
-    def mask_sensitive_data(self, data):
-        """
-        Mascara dados sensíveis para exibição segura.
-        
-        Args:
-            data: Dados sensíveis a serem mascarados
-            
-        Returns:
-            dict: Dados mascarados
-        """
-        pass
-```
+### Dependências e Configuração:
 
-#### s3_handler.py
-```python
-class S3Handler:
-    """
-    Classe responsável pela manipulação de arquivos no S3.
-    """
-    
-    def __init__(self, bucket_name):
-        """Inicializa o manipulador de S3."""
-        self.bucket_name = bucket_name
-        
-    def upload_file(self, file_path, s3_key):
-        """
-        Faz upload de um arquivo para o S3.
-        
-        Args:
-            file_path: Caminho do arquivo local
-            s3_key: Chave do objeto no S3
-            
-        Returns:
-            str: URL do arquivo no S3
-        """
-        pass
-        
-    def download_file(self, s3_key, local_path):
-        """
-        Faz download de um arquivo do S3.
-        
-        Args:
-            s3_key: Chave do objeto no S3
-            local_path: Caminho local para salvar o arquivo
-            
-        Returns:
-            str: Caminho local do arquivo baixado
-        """
-        pass
-```
+*   Utiliza `FastAPI`, `UploadFile`, `File`, `Form`, `HTTPException`, `Query`.
+*   Integra os handlers `DynamoDBHandler` e `S3Handler` da pasta `lambda_functions/processor`.
+*   Utiliza o `setup_logger` de `lambda_functions/processor/utils/logger.py`.
+*   Carrega variáveis de ambiente usando `python-dotenv` (espera um arquivo `.env`).
+*   Requer as variáveis de ambiente `DYNAMODB_TABLE` e `S3_BUCKET`.
 
-#### dynamodb_handler.py
-```python
-class DynamoDBHandler:
-    """
-    Classe responsável pelas operações no DynamoDB.
-    """
-    
-    def __init__(self, table_name):
-        """Inicializa o manipulador de DynamoDB."""
-        self.table_name = table_name
-        
-    def save_audit_result(self, audit_data):
-        """
-        Salva os resultados da auditoria no DynamoDB.
-        
-        Args:
-            audit_data: Dados da auditoria
-            
-        Returns:
-            str: ID da auditoria
-        """
-        pass
-        
-    def get_audit_result(self, audit_id):
-        """
-        Obtém os resultados de uma auditoria.
-        
-        Args:
-            audit_id: ID da auditoria
-            
-        Returns:
-            dict: Dados da auditoria
-        """
-        pass
-```
+## Detalhamento dos Módulos Lambda
 
-#### sns_publisher.py
-```python
-class SNSPublisher:
-    """
-    Classe responsável pela publicação de mensagens no SNS.
-    """
-    
-    def __init__(self, topic_arn):
-        """Inicializa o publicador de SNS."""
-        self.topic_arn = topic_arn
-        
-    def publish_notification(self, message, subject):
-        """
-        Publica uma notificação no tópico SNS.
-        
-        Args:
-            message: Mensagem a ser publicada
-            subject: Assunto da mensagem
-            
-        Returns:
-            str: ID da mensagem publicada
-        """
-        pass
-```
+### Lambda Function: Processor (`lambda_functions/processor`)
 
-### Lambda Function: Notifier
+Responsável pelo processamento principal da auditoria.
 
-#### main.py
-```python
-def lambda_handler(event, context):
-    """
-    Função principal que processa eventos de notificação.
-    
-    Args:
-        event: Evento que acionou a função Lambda
-        context: Contexto de execução da Lambda
-        
-    Returns:
-        dict: Resposta da função Lambda
-    """
-    # Implementação do fluxo de notificação
-    pass
-```
+*   **`main.py`**: Ponto de entrada da função Lambda. Orquestra a chamada aos outros módulos para baixar o arquivo do S3 (se aplicável, dependendo do trigger), analisar dados, interagir com StackSpot (se implementado) e salvar resultados.
+*   **`data_analyzer.py`**: Contém a lógica para análise do arquivo CSV e identificação/mascaramento de dados sensíveis (potencialmente usando StackSpot).
+*   **`dynamodb_handler.py`**: Classe para interagir com a tabela DynamoDB (salvar, obter, listar, deletar registros de auditoria). Inclui a funcionalidade de criar a tabela automaticamente se ela não existir.
+*   **`s3_handler.py`**: Classe para realizar operações no S3 (upload, download de arquivos).
+*   **`utils/logger.py`**: Configuração padronizada do logger para a função.
+*   **`utils/validators.py`**: Funções utilitárias para validações diversas (ex: validação de e-mail, formato de dados).
+*   **`requirements.txt`**: Lista as dependências Python específicas desta função.
 
-#### email_formatter.py
-```python
-class EmailFormatter:
-    """
-    Classe responsável pela formatação de e-mails.
-    """
-    
-    def format_audit_notification(self, audit_data):
-        """
-        Formata uma notificação de auditoria para envio por e-mail.
-        
-        Args:
-            audit_data: Dados da auditoria
-            
-        Returns:
-            dict: Mensagem formatada para e-mail
-        """
-        pass
-```
+### Lambda Function: Notifier (`lambda_functions/notifier`)
 
-#### dynamodb_reader.py
-```python
-class DynamoDBReader:
-    """
-    Classe responsável pela leitura de dados do DynamoDB.
-    """
-    
-    def __init__(self, table_name):
-        """Inicializa o leitor de DynamoDB."""
-        self.table_name = table_name
-        
-    def get_audit_result(self, audit_id):
-        """
-        Obtém os resultados de uma auditoria.
-        
-        Args:
-            audit_id: ID da auditoria
-            
-        Returns:
-            dict: Dados da auditoria
-        """
-        pass
-```
+Responsável por notificar os usuários sobre os resultados da auditoria.
+
+*   **`main.py`**: Ponto de entrada da função Lambda. Recebe o evento (ex: do DynamoDB Stream ou SNS), busca os detalhes da auditoria e envia a notificação.
+*   **`dynamodb_reader.py`**: Classe específica para leitura de dados da tabela DynamoDB (embora `DynamoDBHandler` no processor também tenha métodos de leitura, esta pode ser uma versão simplificada ou específica para o notifier).
+*   **`email_formatter.py`**: Classe para formatar o conteúdo da notificação por e-mail com base nos dados da auditoria.
+*   **`utils/logger.py`**: Configuração padronizada do logger para a função.
+*   **`requirements.txt`**: Lista as dependências Python específicas desta função.
 
 ## Integração com StackSpot IA
 
-A integração com StackSpot IA é realizada através do módulo `stackspot_integration.py`, que utiliza o recurso Quick Commands para identificar dados sensíveis. A implementação seguirá as melhores práticas recomendadas pela documentação do StackSpot.
+A integração com StackSpot IA, mencionada na documentação de arquitetura, seria implementada principalmente dentro do `data_analyzer.py` na função `processor`. Utilizaria Quick Commands para identificar os padrões de dados sensíveis no arquivo CSV processado.
 
-### Exemplo de Uso do Quick Commands
+## Configuração de Ambiente (`.env`)
 
-```python
-from stackspot import QuickCommands
+O projeto utiliza a biblioteca `python-dotenv` para carregar variáveis de ambiente, indicando a expectativa de um arquivo `.env` na raiz do projeto ou no diretório de execução. No entanto, **este arquivo `.env` não está presente no repositório**. As variáveis de ambiente esperadas, com base no código (`app.py` e possivelmente nas Lambdas), são:
 
-def analyze_with_stackspot(file_path):
-    # Inicializa o cliente StackSpot
-    quick_commands = QuickCommands()
-    
-    # Executa o comando de análise de dados sensíveis
-    result = quick_commands.execute(
-        command="analyze-sensitive-data",
-        args={"file": file_path}
-    )
-    
-    return result
-```
+*   `DYNAMODB_TABLE`: Nome da tabela DynamoDB onde os resultados da auditoria são armazenados.
+*   `S3_BUCKET`: Nome do bucket S3 usado para armazenar os arquivos CSV originais.
+*   `SNS_TOPIC` (Potencialmente): ARN do tópico SNS usado para disparar a função `notifier` (se a arquitetura usar SNS entre as Lambdas).
 
-## Tratamento de Erros
+É crucial criar um arquivo `.env` localmente ou configurar essas variáveis diretamente no ambiente de execução (ex: configurações da Lambda na AWS) para o correto funcionamento da aplicação e das funções.
 
-Todas as classes e funções implementarão tratamento de erros adequado, com logs detalhados para facilitar a depuração. Os erros serão categorizados em:
+## Tratamento de Erros e Logging
 
-1. **Erros de Validação**: Problemas com os dados de entrada
-2. **Erros de Integração**: Falhas na comunicação com serviços externos
-3. **Erros de Processamento**: Falhas durante o processamento dos dados
-4. **Erros de Sistema**: Falhas de infraestrutura ou ambiente
+Ambas as funções Lambda e a aplicação FastAPI utilizam um logger configurado através dos módulos `utils/logger.py`. O tratamento de erros é implementado nos endpoints da API (`app.py`) e deve ser robusto dentro das funções Lambda para capturar exceções durante o processamento, interações com AWS ou StackSpot.
 
 ## Testes
 
-Os testes unitários e de integração serão implementados para todas as classes e funções, garantindo a qualidade e confiabilidade do código. Serão utilizados mocks para simular os serviços AWS e a integração com StackSpot IA.
-
-## Dependências
-
-### Processor Lambda
-
-```
-boto3==1.26.0
-stackspot-sdk==1.0.0
-pandas==1.5.3
-python-dotenv==1.0.0
-```
-
-### Notifier Lambda
-
-```
-boto3==1.26.0
-python-dotenv==1.0.0
-```
-
-## Configuração de Ambiente
-
-As configurações sensíveis, como nomes de buckets, tabelas e tópicos SNS, serão armazenadas como variáveis de ambiente nas funções Lambda, seguindo as melhores práticas de segurança.
-
-```python
-# Exemplo de configuração de ambiente
-import os
-
-S3_BUCKET = os.environ.get('S3_BUCKET')
-DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE')
-SNS_TOPIC = os.environ.get('SNS_TOPIC')
-```
+A pasta `tests/` sugere a intenção de incluir testes unitários e de integração, que são fundamentais para garantir a qualidade e a confiabilidade do código. Recomenda-se o uso de mocks para simular serviços AWS e interações externas durante os testes.
 
 ## Considerações de Segurança
 
-1. Todos os dados sensíveis serão mascarados antes de serem armazenados ou transmitidos
-2. As permissões das funções Lambda seguirão o princípio do menor privilégio
-3. A comunicação entre os serviços será criptografada
-4. Os logs não conterão informações sensíveis
-5. A autenticação para acesso aos detalhes da auditoria será implementada usando JWT
+*   Gerenciamento seguro de credenciais AWS.
+*   Configuração de permissões IAM com o princípio do menor privilégio para as Lambdas e a aplicação.
+*   Validação rigorosa das entradas (arquivos, e-mails).
+*   Mascaramento de dados sensíveis nos logs e resultados armazenados.
+*   Uso de HTTPS para os endpoints da API.
+
